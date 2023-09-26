@@ -8,8 +8,24 @@ Take care not to allow their language pack files to escape into public space.*
 ## This Documentation ##
 
 This documentation was forked from an internal repository intended for
-our own team members. It has not yet been generalised for use by other
+our own team members. It has not yet been fully generalised for use by other
 organisations.
+
+## Forking ##
+
+It is recommended that you clone this repository to a private location and
+add downloaded the latest classic and ultra language packs into it. A
+secure and private location is required because the language packs are 
+copyright of Anthology. Any team members that work with the repository
+need to be aware of Anthology's licensing agreement and take care not to
+breach it by moving those files into a public space.
+
+Choose your base language, e.g. en_GB and create subdirectories like so:
+	*repo*/src/language/classic/en_GB
+	*repo*/src/language/ultra/en_GB
+
+You may need to edit the build.xml file to reflect your choice of base
+language pack.
 
 ## Introduction
 

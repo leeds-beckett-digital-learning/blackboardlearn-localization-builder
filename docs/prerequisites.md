@@ -200,17 +200,12 @@ Test using a command prompt window like this:
 ## Ant plugins.
 
 Two java archives need to be added to the ant installation to provide ant plugin
-functionality that the project relies on.
+functionality that the project relies on. There is an ant build target that 
+automates this. Since this task downloads files from the web you may need
+to use ant autoproxy for this task:
 
-- Find the following files in our Teams Team. Blackboard Channel -> Files -> MyBeckett Language Packs
+	P:\ProjectDir\>ant -autoproxy antprep
 
-		jackson-core-2.15.2.jar
-
-		lbu-filters.jar
-	
-- Download both to the lib subdirectory of your ant installation. E.g. to
-
-		c:\Users\your user name here\Software\apache-ant-1.10.13\lib
 
 ## Meld
 
