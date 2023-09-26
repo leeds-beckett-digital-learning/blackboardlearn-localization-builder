@@ -1,0 +1,122 @@
+<project name="MyBeckettLocalisation" default="dist" basedir="." xmlns:if="ant:if" xmlns:unless="ant:unless">
+
+	<description>
+	Processes source files to create localisations for MyBeckett.
+	Processes both classic and ultra language packs.
+	</description>
+	
+	<property name="proof.dir" location="proof"/>
+	<property name="build.dir" location="build"/>
+	<property name="classiclangbuild.dir" location="${build.dir}/language/classic/en_GB_LBU"/>
+	<property name="ultralangbuild.dir" location="${build.dir}/language/ultra/en_GB_LBU"/>
+	<property name="dist.dir" location="dist"/>
+  
+	<target name="clean">
+		<delete dir="${build.dir}"/>
+	</target>
+
+	<target name="dist" depends="classiclang,ultralang">
+		<zip destfile="${dist.dir}/language/classic/en_GB_LBU.zip" basedir="${classiclangbuild.dir}"/>
+		<copy encoding="UTF-8" outputencoding="UTF-8" file="${ultralangbuild.dir}/ultra_lang_final.json" tofile="${dist.dir}/language/ultra/ultra_en_GB_LBU.json"/>
+	</target>
+
+	<target name="proof" depends="classiclang,ultralang">
+		<!-- Copy all language files -->
+		<copy todir="${proof.dir}/language">
+			<fileset dir="${build.dir}/language"/>
+		</copy>
+	</target>
+
+
+	<!-- Convert the simple change specs into the more complex general filter specs -->
+	<target name="changespecs">
+		<!-- Check if transformed change spec in build is up to date. -->
+		<uptodate property="changespec.classic.uptodate" srcfile="src/changes/lang_property_changes.xml" targetfile="${build.dir}/language/classic/changes.xml"/>
+		<echo if:set="changespec.classic.uptodate" message="Classic change file is up to date"/>
+		<echo unless:set="changespec.classic.uptodate" message="Classic change file is NOT up to date"/>
+		<!-- If not up to date delete properties files in build to force rebuild -->
+		<delete unless:set="changespec.classic.uptodate" failonerror="false">
+			<fileset dir="${classiclangbuild.dir}/en_GB_LBU">
+				<include name="**/*.properties"/>
+			</fileset>
+		</delete>
+		<!-- For classic the file is transformed. -->
+		<xslt in="src/changes/lang_property_changes.xml" out="${build.dir}/language/classic/changes.xml" style="src/transforms/compile_property_changes.xsl"/>
+
+		<!-- Check if copy of change spec in build is up to date. -->
+		<uptodate property="changespec.ultra.uptodate" srcfile="src/changes/lang_property_changes.xml" targetfile="${build.dir}/language/ultra/changes.xml"/>
+		<echo if:set="changespec.ultra.uptodate" message="Ultra change file is up to date"/>
+		<echo unless:set="changespec.ultra.uptodate" message="Ultra change file is NOT up to date"/>
+		<!-- If not, delete the ultra build files to force rebuild. -->
+		<delete unless:set="changespec.ultra.uptodate" dir="${build.dir}/language/ultra/en_GB_LBU" failonerror="false"/>
+		<!-- Copy the change spec file so it won't unnecessarily build again. -->
+		<copy file="src/changes/lang_property_changes.xml" tofile="${build.dir}/language/ultra/changes.xml"/>
+	</target>
+
+
+	<!-- Process the classic language -->
+	<target name="classiclang" depends="changespecs">
+		<!-- Set up the manifest file -->
+		<xslt in="src/language/classic/en_GB/bb-lp-manifest.xml" out="${build.dir}/language/classic/en_GB_LBU/bb-lp-manifest.xml" style="src/transforms/langpackmanifest.xsl"/>
+		
+		<!-- Copy all the non-properties files unchanged -->
+		<copy todir="${classiclangbuild.dir}/en_GB_LBU">
+			<fileset dir="src/language/classic/en_GB/en_GB">
+				<exclude name="**/*.properties"/>
+			</fileset>
+		</copy>
+		
+		<!-- Filter all the properties files as they are copied -->
+		<copy todir="${classiclangbuild.dir}/en_GB_LBU" encoding="ISO8859_1" outputencoding="ISO8859_1">
+			<fileset dir="src/language/classic/en_GB/en_GB">
+				<include name="**/*.properties"/>
+			</fileset>
+			<filterchain>
+				<filterreader classname="uk.ac.leedsbeckett.lbufilters.GeneralFilter">
+					<classpath>
+						<pathelement path="../lbu-filters/build/libs/lbu-filters.jar"/>
+					</classpath>
+					<param name="specification" value="${build.dir}/language/classic/changes.xml"/>
+				</filterreader>
+				<fixcrlf eol="lf"/>
+			</filterchain>
+		</copy>
+				
+	</target>
+
+	<!-- Import the ultra language - just one file -->
+	<!-- Converts to XML and sorts elements by key. -->
+	<!-- Output to src folder so this can be commited to version control. For better comparison of base versions -->
+	<target name="importultra">
+		<!-- Convert the JSON file into an XML file for easier processing -->
+		<copy encoding="UTF-8" outputencoding="UTF-8" file="src/language/ultra/en_GB/ultra.json" tofile="src/language/ultra/en_GB/ultra.xml">
+			<filterchain>
+				<filterreader classname="uk.ac.leedsbeckett.lbufilters.JsonToXml"/>
+			</filterchain>
+		</copy>
+	
+		<!-- Convert to friendlier application specific schema of XML -->
+		<xslt in="src/language/ultra/en_GB/ultra.xml" out="src/language/ultra/en_GB/ultra_lang_for_diff.xml" style="src/transforms/extractresults.xsl"/>
+	</target>
+	
+	<!-- Process the ultra language - just one file -->
+	<!-- Multiple copy operations to preserve the intermediate edits for comparison. -->
+	<target name="ultralang" depends="changespecs,importultra">
+	
+		<!-- Find and replace strings in the XSL. This time omit change indicator attributes - better for file comparison -->
+		<xslt in="src/language/ultra/en_GB/ultra_lang_for_diff.xml" out="${ultralangbuild.dir}/ultra_lang_for_diff.xml" style="src/transforms/ultralangfindreplace.xsl">
+			<param name="changespec" expression="${build.dir}/language/ultra/changes.xml"/>
+			<param name="changeindicator" expression="false"/>
+		</xslt>
+		
+		<!-- Find and replace strings in the XSL. Include change indicator attributes - to help with next step -->
+		<xslt in="src/language/ultra/en_GB/ultra_lang_for_diff.xml" out="${ultralangbuild.dir}/ultra_lang_for_filtering.xml" style="src/transforms/ultralangfindreplace.xsl">
+			<param name="changespec" expression="${build.dir}/language/ultra/changes.xml"/>
+		</xslt>
+
+		<!-- Pick out only strings that have been changed and convert to json file for import into BB Learn. -->
+		<xslt in="${ultralangbuild.dir}/ultra_lang_for_filtering.xml" out="${ultralangbuild.dir}/ultra_lang_final.json" style="src/transforms/ultralangjson.xsl"/>
+				
+	</target>
+	
+</project>	

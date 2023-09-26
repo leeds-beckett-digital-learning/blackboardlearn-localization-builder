@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<spec xmlns="https://my.leedsbeckett.ac.uk">
+
+	<!-- FIXES
+	The prefix and suffix are added to every 'match' attribute value before they are used.
+	They are designed to prevent matches with text in variable names and only text which
+	will be user readable.
+	-->
+
+	<fixes prefix="(?&lt;![\.@a-zA-Z_{/])" suffix="(?![a-zA-Z_])"/>
+
+	<!-- PROCESSING
+	Choose is the element that contains the processing. Each string property
+	will be passed through the processing one by one. The choose element has
+	a series of one or more when elements followed by an otherwise element.
+	The string property will be processed by the first when clause that matches
+	or, if none match, by the otherwise clause. (It will only be processed by
+	one clause.)
+	-->
+
+	<choose>
+		<!-- ABOUT CLAUSES
+		Early clauses catch a few niche strings that need special processing
+		because they are not just changes in terminology but provide improved
+		or more appropriate messages to users.
+		-->
+
+		<!-- The value for this single key needs to be changed entirely regardless of current value -->
+		<!-- Note use of target="ultra" so this clause is ignored for classic strings. -->
+		<when target="ultra">
+			<matches part="key" spec="^welcome\.welcome\.title.*"/>
+			<changes>
+				<replace match="^.*"  with="Welcome to --------!"/>
+			</changes>
+		</when>
+		
+		<!-- The value for this single key needs to be changed entirely regardless of current value -->
+		<when target="ultra">
+			<matches part="key" spec="^welcome\.welcome\.description.*"/>
+			<changes>
+				<replace match=".*"  with="Your Portal and Virtual Learning Environment at --------- University."/>
+			</changes>
+		</when>
+		
+
+		<!-- This clause processes three specific properties in Ultra to insert "MyBeckett"  
+			Note that more strings will have MyBeckett inserted using the otherwise clause. -->
+		
+		<when target="ultra">
+			<!-- Checks if key of the string property matches the regular expression in 'spec' -->
+			<matches part="key" spec="^admin-pages\.ultra-settings\.institutionPages\.form-title.*"/>
+			<matches part="key" spec="^ip\.editPage\.superTitle.*"/>
+			<matches part="key" spec="^ip\.filePermissionUpdateError\.description.*"/>
+			<matches part="key" spec="^ip\.header\.brandSelectLabel.*"/>
+			<matches part="key" spec="^base\.nav\.institutionPage.*"/>
+			<matches part="key" spec="^ip\.header\.title.*"/>
+			<matches part="key" spec="^welcome\.welcome\.title.*"/>
+			<changes>
+				<replace match="your Institution Page"  with="-------- Home Page"/>
+				<replace match="Institution Pages"       with="-------- Home Page"/>
+				<replace match="Institution Page"       with="--------"/>
+				<replace match="the new Blackboard"     with="--------"/>
+			</changes>
+		</when>
+		
+		<!-- This clause will only be used for ultra string properties
+		<!-- This clause detects all the properties that should be ignored for various reasons
+			and this doesn't have target="ultra" because these keys are in either classic or ultra.
+		-->
+		<when>
+		
+			<!-- Property names (index 0) that have 'xythosmetadata.' at the start -->
+			<!-- This because the word organization does not refer to BB Learn orgs here -->
+			<matches part="key" spec="^xythosmetadata\..*"/>
+			<!-- Make no changes for these strings. In other words prevent processing these strings 
+			using the otherwise clause. -->
+			<changes>
+			</changes> 
+		</when>
+
+		<!-- For properties that don't match anything above do the bulk processing.
+		-->
+		<otherwise>
+			<!-- otherwise clause doesn't have any matches elements here -->
+			<changes>
+				<!--
+				The order of these changes is significant.
+				Plurals need to be replaced before singulars.
+				If a 'with' attribute for one replace is the
+				same as a 'match' for a different replace     
+				it needs to be later in the list.             
+				
+				To protect a phrase that contains a word that   
+				elsewhere needs changing, change the phrase into
+				a unique nonsense phrase at the start and change
+				back at the end.
+				-->
+				
+				<replace match="Students can view feedback for all marked attempts"  with="All feedback for all attempts, even unmarked attempts, shows to students"/>
+
+				<replace match="gradebook"           with="grade centre"/>
+				<replace match="Gradebook"           with="Grade Centre"/>
+
+				<!-- Works because the first when clause handles special cases where " home page" is not appropriate -->
+				<replace match="institution pages"   with="--------- home page"/>
+				<replace match="Institution pages"   with="--------- home page"/>
+				<replace match="Institution Pages"   with="--------- Home Page"/>
+				<replace match="institution page"    with="--------- home page"/>
+				<replace match="Institution page"    with="--------- home page"/>
+				<replace match="Institution Page"    with="--------- Home Page"/>
+			</changes>
+		</otherwise>
+	</choose>
+
+</spec>

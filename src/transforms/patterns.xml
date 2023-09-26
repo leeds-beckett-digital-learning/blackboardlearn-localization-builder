@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<patterns>
+  <pattern>
+    <from>course</from>
+    <to>module</to>
+  </pattern>
+  <pattern>
+    <from>Weighted</from>
+    <to>Adjusted</to>
+  </pattern>
+  <pattern>
+    <from>Course</from>
+    <to>Module</to>
+  </pattern>
+</patterns>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tokenise>
+  <!-- The properties files use all sorts of line delimiters although they ought to be consistent. -->
+  <!-- So accept any of newline (usual for unix), carriage return (usual for older Apple OSs) and  -->
+  <!-- carriage return - newline combination (usual for DOS and Windows).                          -->
+  <delimiter value="&#x0d;&#x0a;"/>
+  <delimiter value="&#x0d;"/>
+  <delimiter value="&#x0a;"/>
+  <!-- Each line has been divided into the line content and the line delimiter -->
+  
+  <!-- First process the line content -->
+  <choose from="0" to="0">
+    <!-- When the line content is a comment... -->
+    <when>
+      <or>
+        <!-- Zero or more tabs/spaces + hash, followed by anything up to end of content. -->
+        <matches spec="^[ \t]*#.*$"/>
+        <!-- Any content that has only tabs/spaces in it from start to end.              -->
+        <matches spec="^[ \t]*$"/>
+        <!-- <not><matches spec="(?&lt;!s)="/></not> -->
+      </or>
+      <!-- Output the content without change. -->
+      <output/>
+    </when>
+
+    <!-- Any other lines ought to be property name/value pairs but find and comment out any rogue lines -->
+    <when>
+      <!-- Does not contain an unescaped equals sign - which would be invalid property -->
+      <not><matches spec="^.*(?&lt;!\\)=.*$"/></not>
+      <literal># ERROR LINE: </literal><output/>
+    </when>
+    
+    <!-- Should be valid property line so... -->
+    <otherwise>
+      <!-- Split the content into the property name (including the following =) and the value -->
+      <!-- The spec uses reg ex reference to ensure the '=' isn't lost in the split -->
+      <!-- The limit of '2' is used to ensure that the value isn't split if it also contains an '=' -->
+      <split spec="((?&lt;==))" limit="2">
+        <choose id="insertpoint">
+		
+          <!-- For each 'when' and 'otherwise' in input construct like this:
+
+          <when>
+            <or>
+            </or>
+			
+            <output from="0" to="0"/>
+			<pass from="1" to="1">insert processing here</pass>
+			
+          </when>          
+
+          <otherwise>                
+            <output from="0" to="0"/>
+			<pass from="1" to="1">insert processing here</pass>
+          </otherwise>
+		  
+         -->          
+        </choose>
+      </split>
+    </otherwise>
+  </choose>
+  <!-- Regardless of how the line content was processed, output the -->
+  <!-- line delimiter, if there is one. -->
+  <output from="1" to="1"/>
+</tokenise>
